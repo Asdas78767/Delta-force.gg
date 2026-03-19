@@ -1,0 +1,25 @@
+{
+  "name": "deltaforce-gg",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+    ,
+    "update:data": "ts-node scripts/updateData.ts"
+  },
+  "dependencies": {
+    "next": "14.0.4",
+    "react": "18.3.0",
+    "react-dom": "18.3.0"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3",
+    "@types/react": "18.2.7",
+    "@types/node": "20.5.6"
+    ,
+    "ts-node": "10.9.1",
+    "cheerio": "1.0.0-rc.12"
+  }
+}
