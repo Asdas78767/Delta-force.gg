@@ -1,28 +1,29 @@
 export interface OperationStatsRequest {
   playerId: string;
-  ranked?: boolean;
-  seasonId?: string | null;
+  mode: 'beacon' | 'warfare';
 }
 
-/**
- * Fetches Delta Force operation stats for the given player.
- *
- * This function calls the Delta Force community API using the base URL and API key
- * defined in environment variables. See .env.local.example for the required
- * configuration.
- *
- * @param args Object containing the playerId and optional ranked/seasonId filters.
- * @returns A promise that resolves with the parsed JSON response from the API.
- */
-export async function getPlayerOperationStats(
-  args: OperationStatsRequest,
-): Promise<any> {
+export const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function isValidUuid(value: string): boolean {
+  return UUID_REGEX.test(value.trim());
+}
+
+export async function getPlayerOperationStats(args: OperationStatsRequest): Promise<any> {
   const apiUrl = process.env.DELTA_FORCE_API_URL;
   const apiKey = process.env.DELTA_FORCE_API_KEY;
+
   if (!apiUrl || !apiKey) {
-    throw new Error('Missing API configuration');
+    throw new Error('환경변수 누락: DELTA_FORCE_API_URL / DELTA_FORCE_API_KEY');
   }
+
+  if (!isValidUuid(args.playerId)) {
+    throw new Error('playerId는 UUID 형식이어야 합니다.');
+  }
+
   const endpoint = `${apiUrl}/deltaforceapi.gateway.v1.ApiService/GetPlayerOperationStats`;
+
   const res = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -32,15 +33,21 @@ export async function getPlayerOperationStats(
     },
     body: JSON.stringify({
       playerId: args.playerId,
-      ranked: args.ranked ?? false,
-      seasonId: args.seasonId ?? null,
+      ranked: args.mode === 'warfare',
+      seasonId: null,
     }),
+    cache: 'no-store',
   });
+
+  const text = await res.text();
+
   if (!res.ok) {
-    const errorText = await res.text().catch(() => '');
-    throw new Error(
-      `API error ${res.status}: ${res.statusText} ${errorText}`,
-    );
+    throw new Error(`API error ${res.status}: ${res.statusText} ${text}`);
   }
-  return res.json();
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error('API 응답 JSON 파싱 실패');
+  }
 }
